@@ -7,9 +7,16 @@ class Query(graphene.ObjectType):
   Queries for the Restaurant model
   """
   restaurants = graphene.List(RestaurantType)
+  get_restaurant = graphene.Field(RestaurantType, id=graphene.String())
+
 
   def resolve_restaurants(self, info, **kwargs):
+    if not info.context.user.is_authenticated:
+            return Restaurant.objects.none()
     return Restaurant.objects.all()
+  
+  def resolve_get_restaurant(self, info, id):
+    return Restaurant.objects.get(id=id)
 
 class DeleteRestaurant(graphene.Mutation):
   class Arguments:

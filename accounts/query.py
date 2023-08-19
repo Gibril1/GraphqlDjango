@@ -1,0 +1,38 @@
+import graphene
+import graphql_jwt
+from .schema import UserType
+from django.contrib.auth.models import User
+
+class Query(graphene.ObjectType):
+    users = graphene.List(UserType)
+
+    def resolve_users(self, info, **kwargs):
+        return User.objects.all()
+    
+
+class RegisterUser(graphene.Mutation):
+    class Arguments:
+        username = graphene.String(required=True)
+        email = graphene.String(required=True)
+        password = graphene.String(required=True)
+        password2 = graphene.String(required=True)
+    
+    ok = graphene.Boolean()
+    user = graphene.Field(UserType)
+    message = graphene.String()
+
+    def mutate(self, info, username, email, password, password2):
+        if password != password2:
+            return RegisterUser(ok=False, user=None, message='Passwords do not match')
+        user = User(
+            username=username,
+            email=email,
+        )
+        user.set_password(password)
+        user.save()
+        return RegisterUser(ok=True, user=user)
+    
+class Mutation(graphene.ObjectType):
+    register_user = RegisterUser.Field()
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
